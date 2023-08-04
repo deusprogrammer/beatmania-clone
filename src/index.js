@@ -27,6 +27,8 @@ class MyGame extends Phaser.Scene {
 
         this.hitCount = 0;
         this.totalBeats = 0;
+
+        this.modeText = null;
         this.hitCountText = null;
         this.timeText = null;
         this.deltaText = null;
@@ -39,6 +41,15 @@ class MyGame extends Phaser.Scene {
         this.beats = new Array(COLUMNS);
         for (let column = 0; column < COLUMNS; column++) {
             this.beats[column] = new Array();
+        }
+
+        if (localStorage.getItem('recordedChart')) {
+            this.recordedBeats = JSON.parse(localStorage.getItem('recordedChart'));
+        } else {
+            this.recordedBeats = new Array(COLUMNS);
+            for (let column = 0; column < COLUMNS; column++) {
+                this.recordedBeats[column] = new Array();
+            }
         }
 
         this.beatLineIsPressed = new Array(COLUMNS).fill(false);
@@ -76,9 +87,19 @@ class MyGame extends Phaser.Scene {
             dump: this.input.keyboard.addKey(
                 Phaser.Input.Keyboard.KeyCodes.ENTER
             ),
+            test: this.input.keyboard.addKey('T'),
+            stop: this.input.keyboard.addKey(
+                Phaser.Input.Keyboard.KeyCodes.ESC
+            )
         };
 
         // Hit count text
+        this.modeText = this.add.text(
+            TEXT_Y_OFFSET,
+            0,
+            `Mode:`,
+            { color: 'white' }
+        );
         this.hitCountText = this.add.text(
             TEXT_Y_OFFSET,
             20,
@@ -164,6 +185,12 @@ class MyGame extends Phaser.Scene {
 
     isUp(column) {
         return this.controls.beats[column].reduce((acc, curr) => acc || curr.isUp, false);
+    }
+
+    reset() {
+        this.beatLineIsPressed = new Array(COLUMNS).fill(false);
+        this.nextBeatsIndex = new Array(COLUMNS).fill(0);
+        this.nextBeatHit = new Array(COLUMNS).fill(false);
     }
 
     update(time, delta) {
@@ -347,7 +374,7 @@ class MyGame extends Phaser.Scene {
                     !this.beatLineIsPressed[column]
                 ) {
                     console.log("Beat recorded for " + column + ": " + timeSinceStart);
-                    this.beats[column].push({
+                    this.recordedBeats[column].push({
                         ms: timeSinceStart,
                     });
                 }
@@ -358,22 +385,49 @@ class MyGame extends Phaser.Scene {
         // Handle state changing buttons
         if (this.controls.record.isDown) {
             this.mode = 'recording';
+            this.modeText.setText(`mode: ${this.mode}`);
+            this.recordedBeats = new Array(COLUMNS);
+            for (let column = 0; column < COLUMNS; column++) {
+                this.recordedBeats[column] = new Array();
+            }
             this.timeStarted = time;
             this.song.play();
         } else if (this.controls.play.isDown) {
             this.mode = 'playing';
+            this.modeText.setText(`mode: ${this.mode}`);
+            this.reset();
+            this.song.stop();
             this.beats = smoooochTiming;
             this.totalBeats = this.beats.reduce((acc, curr) => {
                 return acc + curr.length;
             }, 0);
             this.timeStarted = time;
             this.song.play();
+        } else if (this.controls.test.isDown) {
+            this.mode = 'playing';
+            this.modeText.setText(`mode: test`);
+            this.reset();
+            this.song.stop();
+            this.beats = this.recordedBeats;
+            this.totalBeats = this.beats.reduce((acc, curr) => {
+                return acc + curr.length;
+            }, 0);
+            this.timeStarted = time;
+            this.song.play();
         } else if (this.controls.dump.isDown) {
-            this.mode === 'paused';
+            if (this.mode !== 'recording') {
+                return;
+            }
+            this.mode = 'paused';
+            this.modeText.setText(`mode: ${this.mode}`);
             this.song.stop();
             console.log(
-                'export default ' + JSON.stringify(this.beats, null, 5)
+                'export default ' + JSON.stringify(this.recordedBeats, null, 5)
             );
+            localStorage.setItem('recordedChart', JSON.stringify(this.recordedBeats));
+        } else if (this.controls.stop.isDown) {
+            this.mode = 'paused';
+            this.song.stop();
         }
     }
 }
