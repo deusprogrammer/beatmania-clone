@@ -13,7 +13,7 @@ const Y_ZERO = 1000;
 const COLUMNS = 5;
 const TEXT_Y_OFFSET = 800;
 
-const LABELS = ['a', 'b', 'space', ';', "'"];
+const LABELS = ['a', 'b', 'd/l', ';', "'"];
 
 class MyGame extends Phaser.Scene {
     constructor() {
@@ -59,17 +59,15 @@ class MyGame extends Phaser.Scene {
     create() {
         this.controls = {
             beats: [
-                this.input.keyboard.addKey('A'),
-                this.input.keyboard.addKey('S'),
-                this.input.keyboard.addKey(
-                    Phaser.Input.Keyboard.KeyCodes.SPACE
-                ),
-                this.input.keyboard.addKey(
+                [this.input.keyboard.addKey('A')],
+                [this.input.keyboard.addKey('S')],
+                [this.input.keyboard.addKey('D'), this.input.keyboard.addKey('L')],
+                [this.input.keyboard.addKey(
                     Phaser.Input.Keyboard.KeyCodes.SEMICOLON
-                ),
-                this.input.keyboard.addKey(
+                )],
+                [this.input.keyboard.addKey(
                     Phaser.Input.Keyboard.KeyCodes.QUOTES
-                ),
+                )],
             ],
             play: this.input.keyboard.addKey('P'),
             record: this.input.keyboard.addKey('R'),
@@ -158,6 +156,14 @@ class MyGame extends Phaser.Scene {
         this.song = this.sound.add('smooooooch');
     }
 
+    isDown(column) {
+        return this.controls.beats[column].reduce((acc, curr) => acc || curr.isDown, false);
+    }
+
+    isUp(column) {
+        return this.controls.beats[column].reduce((acc, curr) => acc || curr.isUp, false);
+    }
+
     update(time, delta) {
         if (!this.averageDelta) {
             this.averageDelta = delta;
@@ -227,15 +233,15 @@ class MyGame extends Phaser.Scene {
         }
 
         // Clear beat line states if button released
-        this.beatLineIsPressed.forEach((isPressed, index) => {
-            if (isPressed && this.controls.beats[index].isUp) {
-                this.beatLineIsPressed[index] = false;
+        this.beatLineIsPressed.forEach((isPressed, column) => {
+            if (isPressed && this.isUp(column)) {
+                this.beatLineIsPressed[column] = false;
             }
         });
 
         // Handle button press
         this.controls.beats.forEach((beat, column) => {
-            if (beat.isDown) {
+            if (this.isDown(column)) {
                 this.beatLines[column].visible = true;
 
                 // If playing check timing of button press
@@ -274,7 +280,7 @@ class MyGame extends Phaser.Scene {
                         timeSinceStart <= ms + GREAT_TIMING
                     ) {
                         this.hitCount++;
-                        this.hitCountText.setText(`Hits: ${this.hitCount}/121`);
+                        this.hitCountText.setText(`Hits: ${this.hitCount}/${this.totalBeats}`);
                         this.gradeText.setText('GREAT');
                         this.gradeTextTween.restart();
                         this.gradeText.setFill('lime');
@@ -287,7 +293,7 @@ class MyGame extends Phaser.Scene {
                         timeSinceStart <= ms + GOOD_TIMING
                     ) {
                         this.hitCount++;
-                        this.hitCountText.setText(`Hits: ${this.hitCount}/121`);
+                        this.hitCountText.setText(`Hits: ${this.hitCount}/${this.totalBeats}`);
                         this.gradeText.setText('GOOD');
                         this.gradeTextTween.restart();
                         this.gradeText.setFill('lightblue');
@@ -336,8 +342,8 @@ class MyGame extends Phaser.Scene {
             this.mode = 'playing';
             this.beats = smoooochTiming;
             this.totalBeats = this.beats.reduce((acc, curr) => {
-                acc += curr.length;
-            });
+                return acc + curr.length;
+            }, 0);
             this.timeStarted = time;
             this.song.play();
         } else if (this.controls.dump.isDown) {
