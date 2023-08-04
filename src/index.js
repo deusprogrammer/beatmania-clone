@@ -179,20 +179,6 @@ class MyGame extends Phaser.Scene {
         this.song = this.sound.add('smooooooch');
     }
 
-    isDown(column) {
-        return this.controls.beats[column].reduce((acc, curr) => acc || curr.isDown, false);
-    }
-
-    isUp(column) {
-        return this.controls.beats[column].reduce((acc, curr) => acc && curr.isUp, true);
-    }
-
-    reset() {
-        this.beatLineIsPressed = new Array(COLUMNS).fill(false);
-        this.nextBeatsIndex = new Array(COLUMNS).fill(0);
-        this.nextBeatHit = new Array(COLUMNS).fill(false);
-    }
-
     update(time, delta) {
         if (!this.averageDelta) {
             this.averageDelta = delta;
@@ -429,6 +415,21 @@ class MyGame extends Phaser.Scene {
             this.mode = 'paused';
             this.song.stop();
         }
+    }
+
+    isDown(column) {
+        return this.controls.beats[column].reduce((acc, curr) => acc || curr.isDown, false);
+    }
+
+    isUp(column) {
+        return this.controls.beats[column].reduce((acc, curr) => acc && curr.isUp, true);
+    }
+
+    reset() {
+        this.beatLineIsPressed = new Array(COLUMNS).fill(false);
+        this.nextBeatsIndex = new Array(COLUMNS).fill(0);
+        this.nextBeatHit = new Array(COLUMNS).fill(false);
+        this.hitCount = 0;
     }
 }
 
