@@ -44,7 +44,9 @@ class MyGame extends Phaser.Scene {
         }
 
         if (localStorage.getItem('recordedChart')) {
-            this.recordedBeats = JSON.parse(localStorage.getItem('recordedChart'));
+            this.recordedBeats = JSON.parse(
+                localStorage.getItem('recordedChart')
+            );
         } else {
             this.recordedBeats = new Array(COLUMNS);
             for (let column = 0; column < COLUMNS; column++) {
@@ -74,13 +76,20 @@ class MyGame extends Phaser.Scene {
             beats: [
                 [this.input.keyboard.addKey('A')],
                 [this.input.keyboard.addKey('S')],
-                [this.input.keyboard.addKey('D'), this.input.keyboard.addKey('L')],
-                [this.input.keyboard.addKey(
-                    Phaser.Input.Keyboard.KeyCodes.SEMICOLON
-                )],
-                [this.input.keyboard.addKey(
-                    Phaser.Input.Keyboard.KeyCodes.QUOTES
-                )],
+                [
+                    this.input.keyboard.addKey('D'),
+                    this.input.keyboard.addKey('L'),
+                ],
+                [
+                    this.input.keyboard.addKey(
+                        Phaser.Input.Keyboard.KeyCodes.SEMICOLON
+                    ),
+                ],
+                [
+                    this.input.keyboard.addKey(
+                        Phaser.Input.Keyboard.KeyCodes.QUOTES
+                    ),
+                ],
             ],
             play: this.input.keyboard.addKey('P'),
             record: this.input.keyboard.addKey('R'),
@@ -90,16 +99,13 @@ class MyGame extends Phaser.Scene {
             test: this.input.keyboard.addKey('T'),
             stop: this.input.keyboard.addKey(
                 Phaser.Input.Keyboard.KeyCodes.ESC
-            )
+            ),
         };
 
         // Hit count text
-        this.modeText = this.add.text(
-            TEXT_Y_OFFSET,
-            0,
-            `Mode:`,
-            { color: 'white' }
-        );
+        this.modeText = this.add.text(TEXT_Y_OFFSET, 0, `Mode:`, {
+            color: 'white',
+        });
         this.hitCountText = this.add.text(
             TEXT_Y_OFFSET,
             20,
@@ -116,14 +122,14 @@ class MyGame extends Phaser.Scene {
             .text(256 + 64, Y_ZERO, ``, { color: 'white', fontSize: '60px' })
             .setOrigin(0.5, 0.5)
             .setDepth(5);
-        
+
         let textTween = this.add.tween({
             targets: [this.gradeText],
             ease: 'Linear',
             duration: 250,
             alpha: 0,
             scaleX: 2,
-            scaleY: 2
+            scaleY: 2,
         });
 
         this.gradeTextTween = textTween;
@@ -151,7 +157,10 @@ class MyGame extends Phaser.Scene {
                 );
 
                 this.add
-                    .text(64 + column * 128, Y_ZERO + 50, LABELS[column], { color: 'white', fontSize: "20px" })
+                    .text(64 + column * 128, Y_ZERO + 50, LABELS[column], {
+                        color: 'white',
+                        fontSize: '20px',
+                    })
                     .setOrigin(0.5, 0.5);
 
                 const graphics = this.add.graphics();
@@ -173,7 +182,16 @@ class MyGame extends Phaser.Scene {
                 });
                 this.beatBackgrounds.push(tween);
             }
-            this.add.line(0, 0, column * 128, 0, column * 128, 3000, 0xffffff, 1.0);
+            this.add.line(
+                0,
+                0,
+                column * 128,
+                0,
+                column * 128,
+                3000,
+                0xffffff,
+                1.0
+            );
         }
 
         this.song = this.sound.add('smooooooch');
@@ -214,10 +232,13 @@ class MyGame extends Phaser.Scene {
             for (let column = 0; column < COLUMNS; column++) {
                 // Draw beats for next second
                 let visibleBeats = this.beats[column].filter(
-                    ({ ms }) => ms <= timeSinceStart + 1000 && timeSinceStart < ms + POOR_TIMING
+                    ({ ms }) =>
+                        ms <= timeSinceStart + 1000 &&
+                        timeSinceStart < ms + POOR_TIMING
                 );
                 visibleBeats.forEach(({ ms }) => {
-                    let nextBeat = this.beats[column][this.nextBeatsIndex[column]];
+                    let nextBeat =
+                        this.beats[column][this.nextBeatsIndex[column]];
                     // if (nextBeat && nextBeat.ms === ms ) {
                     //     let beatSprite = this.add
                     //         .image(
@@ -257,7 +278,7 @@ class MyGame extends Phaser.Scene {
                     let ms = this.beats[column][this.nextBeatsIndex[column]].ms;
                     if (timeSinceStart >= ms + POOR_TIMING) {
                         if (!this.nextBeatHit[column]) {
-                            this.gradeText.setText("MISS!").setFill("red");
+                            this.gradeText.setText('MISS!').setFill('red');
                             this.gradeTextTween.restart();
                             this.nextBeatHit[column] = false;
                             this.nextBeatsIndex[column]++;
@@ -285,7 +306,9 @@ class MyGame extends Phaser.Scene {
                     !this.beatLineIsPressed[column]
                 ) {
                     // If there are no more beats we can skip this column
-                    if (this.nextBeatsIndex[column] >= this.beats[column].length) {
+                    if (
+                        this.nextBeatsIndex[column] >= this.beats[column].length
+                    ) {
                         return;
                     }
 
@@ -302,7 +325,9 @@ class MyGame extends Phaser.Scene {
                         timeSinceStart <= ms + PERFECT_TIMING
                     ) {
                         this.hitCount++;
-                        this.hitCountText.setText(`Hits: ${this.hitCount}/${this.totalBeats}`);
+                        this.hitCountText.setText(
+                            `Hits: ${this.hitCount}/${this.totalBeats}`
+                        );
                         this.gradeText.setText('PERFECT');
                         this.gradeTextTween.restart();
                         this.gradeText.setFill('yellow');
@@ -315,7 +340,9 @@ class MyGame extends Phaser.Scene {
                         timeSinceStart <= ms + GREAT_TIMING
                     ) {
                         this.hitCount++;
-                        this.hitCountText.setText(`Hits: ${this.hitCount}/${this.totalBeats}`);
+                        this.hitCountText.setText(
+                            `Hits: ${this.hitCount}/${this.totalBeats}`
+                        );
                         this.gradeText.setText('GREAT');
                         this.gradeTextTween.restart();
                         this.gradeText.setFill('lime');
@@ -328,7 +355,9 @@ class MyGame extends Phaser.Scene {
                         timeSinceStart <= ms + GOOD_TIMING
                     ) {
                         this.hitCount++;
-                        this.hitCountText.setText(`Hits: ${this.hitCount}/${this.totalBeats}`);
+                        this.hitCountText.setText(
+                            `Hits: ${this.hitCount}/${this.totalBeats}`
+                        );
                         this.gradeText.setText('GOOD');
                         this.gradeTextTween.restart();
                         this.gradeText.setFill('lightblue');
@@ -359,7 +388,9 @@ class MyGame extends Phaser.Scene {
                     this.mode === 'recording' &&
                     !this.beatLineIsPressed[column]
                 ) {
-                    console.log("Beat recorded for " + column + ": " + timeSinceStart);
+                    console.log(
+                        'Beat recorded for ' + column + ': ' + timeSinceStart
+                    );
                     this.recordedBeats[column].push({
                         ms: timeSinceStart,
                     });
@@ -410,7 +441,10 @@ class MyGame extends Phaser.Scene {
             console.log(
                 'export default ' + JSON.stringify(this.recordedBeats, null, 5)
             );
-            localStorage.setItem('recordedChart', JSON.stringify(this.recordedBeats));
+            localStorage.setItem(
+                'recordedChart',
+                JSON.stringify(this.recordedBeats)
+            );
         } else if (this.controls.stop.isDown) {
             this.mode = 'paused';
             this.song.stop();
@@ -418,11 +452,17 @@ class MyGame extends Phaser.Scene {
     }
 
     isDown(column) {
-        return this.controls.beats[column].reduce((acc, curr) => acc || curr.isDown, false);
+        return this.controls.beats[column].reduce(
+            (acc, curr) => acc || curr.isDown,
+            false
+        );
     }
 
     isUp(column) {
-        return this.controls.beats[column].reduce((acc, curr) => acc && curr.isUp, true);
+        return this.controls.beats[column].reduce(
+            (acc, curr) => acc && curr.isUp,
+            true
+        );
     }
 
     reset() {
