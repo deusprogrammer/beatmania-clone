@@ -184,7 +184,7 @@ class MyGame extends Phaser.Scene {
     }
 
     isUp(column) {
-        return this.controls.beats[column].reduce((acc, curr) => acc && curr.isUp, false);
+        return this.controls.beats[column].reduce((acc, curr) => acc && curr.isUp, true);
     }
 
     reset() {
