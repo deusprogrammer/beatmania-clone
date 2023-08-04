@@ -25,17 +25,24 @@ class MyGame extends Phaser.Scene {
         this.controls = null;
 
         this.hitCount = 0;
+        this.totalBeats = 0;
         this.hitCountText = null;
         this.timeText = null;
         this.deltaText = null;
         this.gradeText = null;
+        this.gradeTextTween = null;
 
         this.beatLines = [];
         this.beatBackgrounds = [];
 
-        this.beats = new Array(COLUMNS).fill([]);
+        this.beats = new Array(COLUMNS);
+        for (let column = 0; column < COLUMNS; column++) {
+            this.beats[column] = new Array();
+        }
+
         this.beatLineIsPressed = new Array(COLUMNS).fill(false);
         this.nextBeatsIndex = new Array(COLUMNS).fill(0);
+        this.nextBeatHit = new Array(COLUMNS).fill(false);
 
         this.timeStarted = null;
         this.mode = 'paused';
@@ -88,6 +95,17 @@ class MyGame extends Phaser.Scene {
             .text(256 + 64, Y_ZERO, ``, { color: 'white', fontSize: '60px' })
             .setOrigin(0.5, 0.5)
             .setDepth(5);
+        
+        let textTween = this.add.tween({
+            targets: [this.gradeText],
+            ease: 'Linear',
+            duration: 250,
+            alpha: 0,
+            scaleX: 2,
+            scaleY: 2
+        });
+
+        this.gradeTextTween = textTween;
 
         // Setup columns
         for (let column = 0; column < COLUMNS + 1; column++) {
@@ -158,13 +176,14 @@ class MyGame extends Phaser.Scene {
         // Reset line color to white
         this.beatLines.forEach((beatLine) => beatLine.setVisible(false));
 
-        // Clear beat sprites
-        let beatSprite;
-        while ((beatSprite = this.beatSprites.shift())) {
-            beatSprite.destroy();
-        }
-
+        // Draw beats and advance next beat index
         if (this.mode === 'playing') {
+            // Clear beat sprites
+            let beatSprite;
+            while ((beatSprite = this.beatSprites.shift())) {
+                beatSprite.destroy();
+            }
+
             this.timeText.setText(`Time:  ${currentTimeSeconds}s`);
             if (updateAvg) {
                 this.deltaText.setText(
@@ -192,10 +211,16 @@ class MyGame extends Phaser.Scene {
                     this.beatSprites.push(beatSprite);
                 });
 
+                // Advance next beat index and register misses
                 if (this.mode === 'playing') {
                     let ms = this.beats[column][this.nextBeatsIndex[column]].ms;
-                    if (timeSinceStart >= ms) {
-                        this.nextBeatsIndex[column]++;
+                    if (timeSinceStart >= ms + POOR_TIMING) {
+                        if (!this.nextBeatHit[column]) {
+                            this.gradeText.setText("MISS!").setFill("red");
+                            this.gradeTextTween.restart();
+                            this.nextBeatHit[column] = false;
+                            this.nextBeatsIndex[column]++;
+                        }
                     }
                 }
             }
@@ -212,15 +237,17 @@ class MyGame extends Phaser.Scene {
         this.controls.beats.forEach((beat, column) => {
             if (beat.isDown) {
                 this.beatLines[column].visible = true;
-                // If there are no more beats we can skip this column
-                if (this.nextBeatsIndex[column] >= this.beats[column].length) {
-                    return;
-                }
 
+                // If playing check timing of button press
                 if (
                     this.mode === 'playing' &&
                     !this.beatLineIsPressed[column]
                 ) {
+                    // If there are no more beats we can skip this column
+                    if (this.nextBeatsIndex[column] >= this.beats[column].length) {
+                        return;
+                    }
+
                     let ms = this.beats[column][this.nextBeatsIndex[column]].ms;
 
                     // If button is pressed and outside the poor timing window, then do nothing.
@@ -228,19 +255,20 @@ class MyGame extends Phaser.Scene {
                         return;
                     }
 
+                    this.nextBeatHit[column] = true;
                     if (
                         timeSinceStart >= ms - PERFECT_TIMING &&
                         timeSinceStart <= ms + PERFECT_TIMING
                     ) {
                         this.hitCount++;
-                        this.hitCountText.setText(`Hits: ${this.hitCount}/121`);
+                        this.hitCountText.setText(`Hits: ${this.hitCount}/${this.totalBeats}`);
                         this.gradeText.setText('PERFECT');
+                        this.gradeTextTween.restart();
                         this.gradeText.setFill('yellow');
                         this.beatBackgrounds[column].targets[0].setVisible(
                             true
                         );
                         this.beatBackgrounds[column].restart();
-                        // this.nextBeatsIndex[column]++;
                     } else if (
                         timeSinceStart >= ms - GREAT_TIMING &&
                         timeSinceStart <= ms + GREAT_TIMING
@@ -248,12 +276,12 @@ class MyGame extends Phaser.Scene {
                         this.hitCount++;
                         this.hitCountText.setText(`Hits: ${this.hitCount}/121`);
                         this.gradeText.setText('GREAT');
+                        this.gradeTextTween.restart();
                         this.gradeText.setFill('lime');
                         this.beatBackgrounds[column].targets[0].setVisible(
                             true
                         );
                         this.beatBackgrounds[column].restart();
-                        // this.nextBeatsIndex[column]++;
                     } else if (
                         timeSinceStart >= ms - GOOD_TIMING &&
                         timeSinceStart <= ms + GOOD_TIMING
@@ -261,31 +289,36 @@ class MyGame extends Phaser.Scene {
                         this.hitCount++;
                         this.hitCountText.setText(`Hits: ${this.hitCount}/121`);
                         this.gradeText.setText('GOOD');
+                        this.gradeTextTween.restart();
                         this.gradeText.setFill('lightblue');
                         this.beatBackgrounds[column].targets[0].setVisible(
                             true
                         );
                         this.beatBackgrounds[column].restart();
-                        // this.nextBeatsIndex[column]++;
                     } else if (
                         timeSinceStart >= ms - BAD_TIMING &&
                         timeSinceStart <= ms + BAD_TIMING
                     ) {
                         this.gradeText.setText('BAD');
+                        this.gradeTextTween.restart();
                         this.gradeText.setFill('white');
-                        // this.nextBeatsIndex[column]++;
                     } else if (
                         timeSinceStart >= ms - POOR_TIMING &&
                         timeSinceStart <= ms + POOR_TIMING
                     ) {
                         this.gradeText.setText('POOR');
+                        this.gradeTextTween.restart();
                         this.gradeText.setFill('gray');
-                        // this.nextBeatsIndex[column]++;
+                    } else {
+                        this.nextBeatHit[column] = false;
                     }
+                    this.nextBeatHit[column] = false;
+                    this.nextBeatsIndex[column]++;
                 } else if (
                     this.mode === 'recording' &&
                     !this.beatLineIsPressed[column]
                 ) {
+                    console.log("Beat recorded for " + column + ": " + timeSinceStart);
                     this.beats[column].push({
                         ms: timeSinceStart,
                     });
@@ -302,6 +335,9 @@ class MyGame extends Phaser.Scene {
         } else if (this.controls.play.isDown) {
             this.mode = 'playing';
             this.beats = smoooochTiming;
+            this.totalBeats = this.beats.reduce((acc, curr) => {
+                acc += curr.length;
+            });
             this.timeStarted = time;
             this.song.play();
         } else if (this.controls.dump.isDown) {
