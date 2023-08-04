@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import beatRed from './assets/beat-red.png';
+import beatBlue from './assets/beat-blue.png';
 import beatHit from './assets/beat-hit.png';
 import smooooooch from './assets/smooooch.mp3';
 import smoooochTiming from './smooooch.timing';
@@ -8,7 +9,7 @@ const PERFECT_TIMING = 16.67;
 const GREAT_TIMING = 33.3;
 const GOOD_TIMING = 116.67;
 const BAD_TIMING = 250;
-const POOR_TIMING = 500;
+const POOR_TIMING = 260;
 const Y_ZERO = 1000;
 const COLUMNS = 5;
 const TEXT_Y_OFFSET = 800;
@@ -52,6 +53,7 @@ class MyGame extends Phaser.Scene {
 
     preload() {
         this.load.image('beat-red', beatRed);
+        this.load.image('beat-blue', beatBlue);
         this.load.image('beat-hit', beatHit);
         this.load.audio('smooooooch', smooooooch);
     }
@@ -80,7 +82,7 @@ class MyGame extends Phaser.Scene {
         this.hitCountText = this.add.text(
             TEXT_Y_OFFSET,
             20,
-            `Hits: ${this.hitCount}/121`,
+            `Hits: ${this.hitCount}/???`,
             { color: 'white' }
         );
         this.timeText = this.add.text(TEXT_Y_OFFSET, 40, `Time:  `, {
@@ -197,16 +199,31 @@ class MyGame extends Phaser.Scene {
                 );
             }
             for (let column = 0; column < COLUMNS; column++) {
-                // If there are no more beats we can skip this column
-                if (this.nextBeatsIndex[column] >= this.beats[column].length) {
-                    continue;
-                }
-
                 // Draw beats for next second
                 let visibleBeats = this.beats[column].filter(
-                    ({ ms }) => ms <= timeSinceStart + 1000
+                    ({ ms }) => ms <= timeSinceStart + 1000 && timeSinceStart < ms + POOR_TIMING
                 );
                 visibleBeats.forEach(({ ms }) => {
+                    let nextBeat = this.beats[column][this.nextBeatsIndex[column]];
+                    // if (nextBeat && nextBeat.ms === ms ) {
+                    //     let beatSprite = this.add
+                    //         .image(
+                    //             64 + column * 128,
+                    //             1000 - (ms - timeSinceStart),
+                    //             'beat-blue'
+                    //         )
+                    //         .setDepth(1);
+                    //     this.beatSprites.push(beatSprite);
+                    // } else {
+                    //     let beatSprite = this.add
+                    //         .image(
+                    //             64 + column * 128,
+                    //             1000 - (ms - timeSinceStart),
+                    //             'beat-red'
+                    //         )
+                    //         .setDepth(1);
+                    //     this.beatSprites.push(beatSprite);
+                    // }
                     let beatSprite = this.add
                         .image(
                             64 + column * 128,
@@ -216,6 +233,11 @@ class MyGame extends Phaser.Scene {
                         .setDepth(1);
                     this.beatSprites.push(beatSprite);
                 });
+
+                // If there are no more beats we can skip this column
+                if (this.nextBeatsIndex[column] >= this.beats[column].length) {
+                    continue;
+                }
 
                 // Advance next beat index and register misses
                 if (this.mode === 'playing') {
