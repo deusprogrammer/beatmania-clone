@@ -72,6 +72,7 @@ class MyGame extends Phaser.Scene {
     }
 
     create() {
+        this.scale.startFullscreen();
         this.controls = {
             beats: [
                 [this.input.keyboard.addKey('A')],
@@ -473,11 +474,20 @@ class MyGame extends Phaser.Scene {
     }
 }
 
+const screenWidth = window.view
+
 const config = {
     type: Phaser.AUTO,
     parent: 'phaser-example',
     width: 1920,
     height: 1080,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        parent: 'phaser-example',
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 1920,
+        height: 1080
+    },
     scene: MyGame,
 };
 
