@@ -11,9 +11,11 @@ const GOOD_TIMING = 116.67;
 const BAD_TIMING = 250;
 const POOR_TIMING = 260;
 const MINIMUM_HOLD_TIME = 30;
+
 const Y_ZERO = 1000;
 const COLUMNS = 5;
 const TEXT_Y_OFFSET = 800;
+const MS_PER_ELEMENT = 1;
 
 const LABELS = ['a', 'b', 'd/l', ';', "'"];
 
@@ -240,7 +242,9 @@ class MyGame extends Phaser.Scene {
             }
             
             // Draw the visible beats
-            for (let i = Math.max(timeSinceStart - 250, 0); Math.min(this.beatsArray.length, i < timeSinceStart + 1000); i++) {
+            let lower = Math.max((timeSinceStart - 250)/MS_PER_ELEMENT, 0);
+            let upper = Math.min(this.beatsArray.length, (timeSinceStart + 1000)/MS_PER_ELEMENT);
+            for (let i = lower; i < upper; i++) {
                 let beat = this.beatsArray[i];
                 if (!beat || beat === []) {
                     continue;
@@ -253,7 +257,7 @@ class MyGame extends Phaser.Scene {
                         'beat-red'
                     )
                     .setDepth(1);
-                this.beatSprites.push(beatSprite);
+                    this.beatSprites.push(beatSprite);
                 });
             };
 
@@ -476,11 +480,12 @@ class MyGame extends Phaser.Scene {
     createBeatArray(beats) {
         beats.forEach((column, columnIndex) => {
             column.forEach(beat => {
-                if (!this.beatsArray[Math.trunc(beat.ms)]) {
-                    this.beatsArray[Math.trunc(beat.ms)] = [];
+                let index = Math.trunc(beat.ms/MS_PER_ELEMENT);
+                if (!this.beatsArray[index]) {
+                    this.beatsArray[index] = [];
                 }
                 console.log("PUSHING " + beat.ms + "ms: " + columnIndex);
-                this.beatsArray[Math.trunc(beat.ms)].push({...beat, column: columnIndex, ms: Math.trunc(beat.ms)});
+                this.beatsArray[index].push({...beat, column: columnIndex, ms: Math.trunc(beat.ms)});
             });
         });
         console.log("BEATS ARRAY: " + JSON.stringify(this.beatsArray, null, 5));
