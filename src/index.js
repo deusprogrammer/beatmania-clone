@@ -15,7 +15,7 @@ const MINIMUM_HOLD_TIME = 30;
 const Y_ZERO = 1000;
 const COLUMNS = 5;
 const TEXT_Y_OFFSET = 800;
-const MS_PER_ELEMENT = 1;
+const MS_PER_ELEMENT = 1000;
 
 const LABELS = ['a', 'b', 'd/l', ';', "'"];
 
@@ -242,8 +242,8 @@ class MyGame extends Phaser.Scene {
             }
             
             // Draw the visible beats
-            let lower = Math.max((timeSinceStart - 250)/MS_PER_ELEMENT, 0);
-            let upper = Math.min(this.beatsArray.length, (timeSinceStart + 1000)/MS_PER_ELEMENT);
+            let lower = Math.trunc(Math.max((timeSinceStart - 1000)/MS_PER_ELEMENT, 0));
+            let upper = Math.trunc(Math.min(this.beatsArray.length, (timeSinceStart + 1000 + MS_PER_ELEMENT)/MS_PER_ELEMENT));
             for (let i = lower; i < upper; i++) {
                 let beat = this.beatsArray[i];
                 if (!beat || beat === []) {
