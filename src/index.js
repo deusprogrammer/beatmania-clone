@@ -112,7 +112,7 @@ class MyGame extends Phaser.Scene {
             ),
             hold: this.input.keyboard.addKey(
                 Phaser.Input.Keyboard.KeyCodes.SHIFT
-            )
+            ),
         };
 
         // this.input.addListener('`', () => {
@@ -336,7 +336,7 @@ class MyGame extends Phaser.Scene {
                 if (
                     this.mode === 'recording' &&
                     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
-                        MINIMUM_HOLD_TIME
+                        MINIMUM_HOLD_TIME && this.controls.hold.isDown
                 ) {
                     let { ms } = this.recordedBeats[column].pop();
                     this.recordedBeats[column].push({
@@ -348,6 +348,7 @@ class MyGame extends Phaser.Scene {
                     this.mode === 'playing' &&
                     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
                         MINIMUM_HOLD_TIME &&
+                        this.beats[column][this.nextBeatsIndex[column]] &&
                     this.beats[column][this.nextBeatsIndex[column]].end
                 ) {
                     // If there are no more beats we can skip this column
@@ -408,7 +409,10 @@ class MyGame extends Phaser.Scene {
                     });
                 }
                 this.beatLineIsPressed[column] = true;
-                if (this.beatLineHoldTimeStarted[column] === -1 && this.controls.hold) {
+                if (
+                    this.beatLineHoldTimeStarted[column] === -1 &&
+                    this.controls.hold.isDown
+                ) {
                     this.beatLineHoldTimeStarted[column] = timeSinceStart;
                 }
             }
