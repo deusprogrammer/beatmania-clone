@@ -33,6 +33,7 @@ class MyGame extends Phaser.Scene {
 
         this.recordIsDown = false;
         this.playIsDown = false;
+        this.testIsDown = false;
 
         this.modeText = null;
         this.hitCountText = null;
@@ -81,7 +82,6 @@ class MyGame extends Phaser.Scene {
     }
 
     create() {
-        this.scale.startFullscreen();
         this.controls = {
             beats: [
                 [this.input.keyboard.addKey('A')],
@@ -109,8 +109,12 @@ class MyGame extends Phaser.Scene {
             test: this.input.keyboard.addKey('T'),
             stop: this.input.keyboard.addKey(
                 Phaser.Input.Keyboard.KeyCodes.ESC
-            ),
+            )
         };
+
+        // this.input.addListener('`', () => {
+        //     this.scale.startFullscreen();
+        // })
 
         // Hit count text
         this.modeText = this.add.text(TEXT_Y_OFFSET, 0, `Mode:`, {
@@ -259,16 +263,43 @@ class MyGame extends Phaser.Scene {
                 beat.forEach(({ ms, end, column }) => {
                     let beatSprite;
                     if (!end) {
-
                         beatSprite = this.add
-                        .image(
-                            64 + column * 128,
-                            1000 - (ms - timeSinceStart),
-                            'beat-red'
-                        )
-                        .setDepth(1);
+                            .image(
+                                64 + column * 128,
+                                1000 - (ms - timeSinceStart),
+                                'beat-red'
+                            )
+                            .setDepth(3);
                     } else {
-                        beatSprite = this.add.rectangle(64 + column * 128, 1000 - (end - timeSinceStart), 128, end - ms).setDepth(2);
+                        let startY = 1000 - (ms - timeSinceStart);
+                        let endY = 1000 - (end - timeSinceStart);
+                        let duration = startY - endY;
+                        beatSprite = this.add
+                            .image(
+                                64 + column * 128,
+                                startY,
+                                'beat-blue'
+                            )
+                            .setDepth(3);
+                        this.beatSprites.push(beatSprite);
+                        beatSprite = this.add
+                            .image(
+                                64 + column * 128,
+                                endY,
+                                'beat-blue'
+                            )
+                            .setDepth(3);
+                        this.beatSprites.push(beatSprite);
+                        beatSprite = this.add
+                            .rectangle(
+                                64 + column * 128,
+                                endY,
+                                128,
+                                duration,
+                                0x0000ff
+                            )
+                            .setOrigin(0.5, 0)
+                            .setDepth(2);
                     }
                     this.beatSprites.push(beatSprite);
                 });
@@ -282,14 +313,20 @@ class MyGame extends Phaser.Scene {
                 }
 
                 // Advance next beat index and register misses
-                if (this.mode === 'playing') {
-                    let ms = this.beats[column][this.nextBeatsIndex[column]].ms;
-                    if (timeSinceStart >= ms + POOR_TIMING) {
-                        if (!this.nextBeatHit[column]) {
-                            this.showHit("MISS", "red", column, false);
-                            this.nextBeatHit[column] = false;
-                            this.nextBeatsIndex[column]++;
-                        }
+                let {ms, end} = this.beats[column][this.nextBeatsIndex[column]];
+                if (!end && timeSinceStart >= ms + POOR_TIMING) {
+                    if (!this.nextBeatHit[column]) {
+                        this.showHit('MISS', 'red', column, false);
+
+                        this.nextBeatHit[column] = false;
+                        this.nextBeatsIndex[column]++;
+                    }
+                } else if (end && timeSinceStart >= end + POOR_TIMING) {
+                    if (!this.nextBeatHit[column]) {
+                        this.showHit('MISS', 'red', column, false);
+
+                        this.nextBeatHit[column] = false;
+                        this.nextBeatsIndex[column]++;
                     }
                 }
             }
@@ -305,11 +342,12 @@ class MyGame extends Phaser.Scene {
                     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
                         MINIMUM_HOLD_TIME
                 ) {
-                    this.recordedBeats[column].pop();
+                    let {ms} = this.recordedBeats[column].pop();
                     this.recordedBeats[column].push({
-                        ms: this.beatLineHoldTimeStarted,
+                        ms,
                         end: timeSinceStart,
                     });
+                    this.beatLineHoldTimeStarted[column] = -1;
                 } else if (
                     this.mode === 'playing' &&
                     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
@@ -321,15 +359,21 @@ class MyGame extends Phaser.Scene {
                         this.nextBeatsIndex[column] >= this.beats[column].length
                     ) {
                         return;
-                    } 
+                    }
 
-                    let {end} = this.beats[column][this.nextBeatsIndex[column]];
-                    this.gradeHit(end, timeSinceStart, column);
-                    this.nextBeatHit[column] = false;
-                    this.nextBeatsIndex[column]++;
+                    let { end } =
+                        this.beats[column][this.nextBeatsIndex[column]];
+
+                    let isHit = this.gradeHit(end, timeSinceStart, column);
+
+                    // if (isHit) {
+                        this.nextBeatHit[column] = false;
+                        this.nextBeatsIndex[column]++;
+                    // }
+
+                    this.beatLineHoldTimeStarted[column] = -1;
+                    this.beatLineIsPressed[column] = false;
                 }
-
-                this.beatLineHoldTimeStarted[column] = -1;
             }
         });
 
@@ -348,9 +392,11 @@ class MyGame extends Phaser.Scene {
                         this.nextBeatsIndex[column] >= this.beats[column].length
                     ) {
                         return;
-                    } 
+                    }
 
-                    let {ms, end} = this.beats[column][this.nextBeatsIndex[column]];
+                    let { ms, end } =
+                        this.beats[column][this.nextBeatsIndex[column]];
+
                     let isHit = this.gradeHit(ms, timeSinceStart, column);
                     if (!end && isHit) {
                         this.nextBeatHit[column] = false;
@@ -366,7 +412,9 @@ class MyGame extends Phaser.Scene {
                     });
                 }
                 this.beatLineIsPressed[column] = true;
-                this.beatLineHoldTimeStarted[column] = timeSinceStart;
+                if (this.beatLineHoldTimeStarted[column] === -1) {
+                    this.beatLineHoldTimeStarted[column] = timeSinceStart;
+                }
             }
         });
 
@@ -399,9 +447,9 @@ class MyGame extends Phaser.Scene {
             this.timeStarted = time;
             this.song.play();
         } else if (this.controls.test.isDown) {
-            this.playIsDown = true;
-        } else if (this.playIsDown && this.controls.test.isUp) {
-            this.playIsDown = false;
+            this.testIsDown = true;
+        } else if (this.testIsDown && this.controls.test.isUp) {
+            this.testIsDown = false;
             this.mode = 'playing';
             this.modeText.setText(`mode: test`);
             this.reset();
@@ -439,9 +487,7 @@ class MyGame extends Phaser.Scene {
             this.hitCountText.setText(
                 `Hits: ${this.hitCount}/${this.totalBeats}`
             );
-            this.beatBackgrounds[column].targets[0].setVisible(
-                true
-            );
+            this.beatBackgrounds[column].targets[0].setVisible(true);
             this.beatBackgrounds[column].restart();
         }
         this.gradeText.setText(rating);
@@ -454,30 +500,30 @@ class MyGame extends Phaser.Scene {
             timeSinceStart >= ms - PERFECT_TIMING &&
             timeSinceStart <= ms + PERFECT_TIMING
         ) {
-            this.showHit("PERFECT", "yellow", column);
+            this.showHit('PERFECT', 'yellow', column);
         } else if (
             timeSinceStart >= ms - GREAT_TIMING &&
             timeSinceStart <= ms + GREAT_TIMING
         ) {
-            this.showHit("GREAT", "lime", column);
+            this.showHit('GREAT', 'lime', column);
         } else if (
             timeSinceStart >= ms - GOOD_TIMING &&
             timeSinceStart <= ms + GOOD_TIMING
         ) {
-            this.showHit("GOOD", "lightblue", column);
+            this.showHit('GOOD', 'lightblue', column);
         } else if (
             timeSinceStart >= ms - BAD_TIMING &&
             timeSinceStart <= ms + BAD_TIMING
         ) {
-            this.showHit("BAD", "white", column, false);
+            this.showHit('BAD', 'white', column, false);
         } else if (
             timeSinceStart >= ms - POOR_TIMING &&
             timeSinceStart <= ms + POOR_TIMING
         ) {
-            this.showHit("POOR", "gray", column, false);
+            this.showHit('POOR', 'gray', column, false);
         } else {
             this.nextBeatHit[column] = false;
-            console.log("NEXT BEAT OUT OF RANGE");
+            console.log('NEXT BEAT OUT OF RANGE');
             return false;
         }
         return true;
@@ -487,16 +533,25 @@ class MyGame extends Phaser.Scene {
     createBeatArray(beats) {
         beats.forEach((column, columnIndex) => {
             column.forEach((beat) => {
-                let index = Math.trunc(beat.ms / MS_PER_ELEMENT);
-                if (!this.beatsArray[index]) {
-                    this.beatsArray[index] = [];
+                let {ms, end} = beat;
+
+                let endTime = ms;
+                if (end) {
+                    endTime = end;
                 }
-                console.log('PUSHING ' + beat.ms + 'ms: ' + columnIndex);
-                this.beatsArray[index].push({
-                    ...beat,
-                    column: columnIndex,
-                    ms: Math.trunc(beat.ms),
-                });
+
+                console.log(Math.trunc(ms / MS_PER_ELEMENT) + " < " + Math.trunc(endTime / MS_PER_ELEMENT));
+                for (let index = Math.trunc(ms / MS_PER_ELEMENT); index < Math.trunc(endTime / MS_PER_ELEMENT) + 1; index++) {
+                    console.log(index + "s");
+                    if (!this.beatsArray[index]) {
+                        this.beatsArray[index] = [];
+                    }
+                    this.beatsArray[index].push({
+                        column: columnIndex,
+                        ms: Math.trunc(ms),
+                        end: Math.trunc(end)
+                    });
+                }
             });
         });
         console.log('BEATS ARRAY: ' + JSON.stringify(this.beatsArray, null, 5));
