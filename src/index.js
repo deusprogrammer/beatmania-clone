@@ -10,7 +10,7 @@ const GREAT_TIMING = 33.3;
 const GOOD_TIMING = 116.67;
 const BAD_TIMING = 250;
 const POOR_TIMING = 260;
-const MINIMUM_HOLD_TIME = 30;
+const MINIMUM_HOLD_TIME = 250;
 
 const Y_ZERO = 1000;
 const COLUMNS = 5;
@@ -280,8 +280,7 @@ class MyGame extends Phaser.Scene {
                     let ms = this.beats[column][this.nextBeatsIndex[column]].ms;
                     if (timeSinceStart >= ms + POOR_TIMING) {
                         if (!this.nextBeatHit[column]) {
-                            this.gradeText.setText('MISS!').setFill('red');
-                            this.gradeTextTween.restart();
+                            this.showHit("MISS", "red", column, false);
                             this.nextBeatHit[column] = false;
                             this.nextBeatsIndex[column]++;
                         }
@@ -290,46 +289,45 @@ class MyGame extends Phaser.Scene {
             }
         }
 
-        // Clear beat line states if button released
+        // Handles button release
         this.beatLineIsPressed.forEach((isPressed, column) => {
             if (isPressed && this.isUp(column)) {
                 this.beatLineIsPressed[column] = false;
 
-                // if (
-                //     this.mode === 'recording' &&
-                //     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
-                //         MINIMUM_HOLD_TIME
-                // ) {
-                //     this.recordedBeats.pop();
-                //     this.recordedBeats[column].push({
-                //         type: 'hold',
-                //         ms: this.beatLineHoldTimeStarted,
-                //         end: timeSinceStart,
-                //     });
-                // } else if (
-                //     this.mode === 'playing' &&
-                //     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
-                //         MINIMUM_HOLD_TIME &&
-                //     this.beats[column][this.nextBeatsIndex[column]].end
-                // ) {
-                //     // If there are no more beats we can skip this column
-                //     if (
-                //         this.nextBeatsIndex[column] >= this.beats[column].length
-                //     ) {
-                //         return;
-                //     } 
+                if (
+                    this.mode === 'recording' &&
+                    timeSinceStart - this.beatLineHoldTimeStarted[column] >=
+                        MINIMUM_HOLD_TIME
+                ) {
+                    this.recordedBeats[column].pop();
+                    this.recordedBeats[column].push({
+                        ms: this.beatLineHoldTimeStarted,
+                        end: timeSinceStart,
+                    });
+                } else if (
+                    this.mode === 'playing' &&
+                    timeSinceStart - this.beatLineHoldTimeStarted[column] >=
+                        MINIMUM_HOLD_TIME &&
+                    this.beats[column][this.nextBeatsIndex[column]].end
+                ) {
+                    // If there are no more beats we can skip this column
+                    if (
+                        this.nextBeatsIndex[column] >= this.beats[column].length
+                    ) {
+                        return;
+                    } 
 
-                //     let {ms} = this.beats[column][this.nextBeatsIndex[column]];
-                //     this.gradeHit(ms, timeSinceStart, column);
-                //     this.nextBeatHit[column] = false;
-                //     this.nextBeatsIndex[column]++;
-                // }
+                    let {end} = this.beats[column][this.nextBeatsIndex[column]];
+                    this.gradeHit(end, timeSinceStart, column);
+                    this.nextBeatHit[column] = false;
+                    this.nextBeatsIndex[column]++;
+                }
 
-                // this.beatLineHoldTimeStarted[column] = -1;
+                this.beatLineHoldTimeStarted[column] = -1;
             }
         });
 
-        // Handle button press
+        // Handles button press
         this.controls.beats.forEach((beat, column) => {
             if (this.isDown(column)) {
                 this.beatLines[column].visible = true;
@@ -347,8 +345,8 @@ class MyGame extends Phaser.Scene {
                     } 
 
                     let {ms, end} = this.beats[column][this.nextBeatsIndex[column]];
-                    this.gradeHit(ms, timeSinceStart, column);
-                    if (!end) {
+                    let isHit = this.gradeHit(ms, timeSinceStart, column);
+                    if (!end && isHit) {
                         this.nextBeatHit[column] = false;
                         this.nextBeatsIndex[column]++;
                     }
@@ -429,69 +427,54 @@ class MyGame extends Phaser.Scene {
         }
     }
 
+    showHit(rating, color, column, isHit = true) {
+        if (isHit) {
+            this.hitCount++;
+            this.hitCountText.setText(
+                `Hits: ${this.hitCount}/${this.totalBeats}`
+            );
+            this.beatBackgrounds[column].targets[0].setVisible(
+                true
+            );
+            this.beatBackgrounds[column].restart();
+        }
+        this.gradeText.setText(rating);
+        this.gradeTextTween.restart();
+        this.gradeText.setFill(color);
+    }
+
     gradeHit(ms, timeSinceStart, column) {
         if (
             timeSinceStart >= ms - PERFECT_TIMING &&
             timeSinceStart <= ms + PERFECT_TIMING
         ) {
-            this.hitCount++;
-            this.hitCountText.setText(
-                `Hits: ${this.hitCount}/${this.totalBeats}`
-            );
-            this.gradeText.setText('PERFECT');
-            this.gradeTextTween.restart();
-            this.gradeText.setFill('yellow');
-            this.beatBackgrounds[column].targets[0].setVisible(
-                true
-            );
-            this.beatBackgrounds[column].restart();
+            this.showHit("PERFECT", "yellow", column);
         } else if (
             timeSinceStart >= ms - GREAT_TIMING &&
             timeSinceStart <= ms + GREAT_TIMING
         ) {
-            this.hitCount++;
-            this.hitCountText.setText(
-                `Hits: ${this.hitCount}/${this.totalBeats}`
-            );
-            this.gradeText.setText('GREAT');
-            this.gradeTextTween.restart();
-            this.gradeText.setFill('lime');
-            this.beatBackgrounds[column].targets[0].setVisible(
-                true
-            );
-            this.beatBackgrounds[column].restart();
+            this.showHit("GREAT", "lime", column);
         } else if (
             timeSinceStart >= ms - GOOD_TIMING &&
             timeSinceStart <= ms + GOOD_TIMING
         ) {
-            this.hitCount++;
-            this.hitCountText.setText(
-                `Hits: ${this.hitCount}/${this.totalBeats}`
-            );
-            this.gradeText.setText('GOOD');
-            this.gradeTextTween.restart();
-            this.gradeText.setFill('lightblue');
-            this.beatBackgrounds[column].targets[0].setVisible(
-                true
-            );
-            this.beatBackgrounds[column].restart();
+            this.showHit("GOOD", "lightblue", column);
         } else if (
             timeSinceStart >= ms - BAD_TIMING &&
             timeSinceStart <= ms + BAD_TIMING
         ) {
-            this.gradeText.setText('BAD');
-            this.gradeTextTween.restart();
-            this.gradeText.setFill('white');
+            this.showHit("BAD", "white", column, false);
         } else if (
             timeSinceStart >= ms - POOR_TIMING &&
             timeSinceStart <= ms + POOR_TIMING
         ) {
-            this.gradeText.setText('POOR');
-            this.gradeTextTween.restart();
-            this.gradeText.setFill('gray');
+            this.showHit("POOR", "gray", column, false);
         } else {
             this.nextBeatHit[column] = false;
+            console.log("NEXT BEAT OUT OF RANGE");
+            return false;
         }
+        return true;
     }
 
     // Process file into an array of milliseconds
