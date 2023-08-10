@@ -109,6 +109,9 @@ class MyGame extends Phaser.Scene {
             test: this.input.keyboard.addKey('T'),
             stop: this.input.keyboard.addKey(
                 Phaser.Input.Keyboard.KeyCodes.ESC
+            ),
+            hold: this.input.keyboard.addKey(
+                Phaser.Input.Keyboard.KeyCodes.SHIFT
             )
         };
 
@@ -275,19 +278,11 @@ class MyGame extends Phaser.Scene {
                         let endY = 1000 - (end - timeSinceStart);
                         let duration = startY - endY;
                         beatSprite = this.add
-                            .image(
-                                64 + column * 128,
-                                startY,
-                                'beat-blue'
-                            )
+                            .image(64 + column * 128, startY, 'beat-blue')
                             .setDepth(3);
                         this.beatSprites.push(beatSprite);
                         beatSprite = this.add
-                            .image(
-                                64 + column * 128,
-                                endY,
-                                'beat-blue'
-                            )
+                            .image(64 + column * 128, endY, 'beat-blue')
                             .setDepth(3);
                         this.beatSprites.push(beatSprite);
                         beatSprite = this.add
@@ -313,7 +308,8 @@ class MyGame extends Phaser.Scene {
                 }
 
                 // Advance next beat index and register misses
-                let {ms, end} = this.beats[column][this.nextBeatsIndex[column]];
+                let { ms, end } =
+                    this.beats[column][this.nextBeatsIndex[column]];
                 if (!end && timeSinceStart >= ms + POOR_TIMING) {
                     if (!this.nextBeatHit[column]) {
                         this.showHit('MISS', 'red', column, false);
@@ -342,7 +338,7 @@ class MyGame extends Phaser.Scene {
                     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
                         MINIMUM_HOLD_TIME
                 ) {
-                    let {ms} = this.recordedBeats[column].pop();
+                    let { ms } = this.recordedBeats[column].pop();
                     this.recordedBeats[column].push({
                         ms,
                         end: timeSinceStart,
@@ -367,8 +363,8 @@ class MyGame extends Phaser.Scene {
                     let isHit = this.gradeHit(end, timeSinceStart, column);
 
                     // if (isHit) {
-                        this.nextBeatHit[column] = false;
-                        this.nextBeatsIndex[column]++;
+                    this.nextBeatHit[column] = false;
+                    this.nextBeatsIndex[column]++;
                     // }
 
                     this.beatLineHoldTimeStarted[column] = -1;
@@ -412,7 +408,7 @@ class MyGame extends Phaser.Scene {
                     });
                 }
                 this.beatLineIsPressed[column] = true;
-                if (this.beatLineHoldTimeStarted[column] === -1) {
+                if (this.beatLineHoldTimeStarted[column] === -1 && this.controls.hold) {
                     this.beatLineHoldTimeStarted[column] = timeSinceStart;
                 }
             }
@@ -533,23 +529,31 @@ class MyGame extends Phaser.Scene {
     createBeatArray(beats) {
         beats.forEach((column, columnIndex) => {
             column.forEach((beat) => {
-                let {ms, end} = beat;
+                let { ms, end } = beat;
 
                 let endTime = ms;
                 if (end) {
                     endTime = end;
                 }
 
-                console.log(Math.trunc(ms / MS_PER_ELEMENT) + " < " + Math.trunc(endTime / MS_PER_ELEMENT));
-                for (let index = Math.trunc(ms / MS_PER_ELEMENT); index < Math.trunc(endTime / MS_PER_ELEMENT) + 1; index++) {
-                    console.log(index + "s");
+                console.log(
+                    Math.trunc(ms / MS_PER_ELEMENT) +
+                        ' < ' +
+                        Math.trunc(endTime / MS_PER_ELEMENT)
+                );
+                for (
+                    let index = Math.trunc(ms / MS_PER_ELEMENT);
+                    index < Math.trunc(endTime / MS_PER_ELEMENT) + 1;
+                    index++
+                ) {
+                    console.log(index + 's');
                     if (!this.beatsArray[index]) {
                         this.beatsArray[index] = [];
                     }
                     this.beatsArray[index].push({
                         column: columnIndex,
                         ms: Math.trunc(ms),
-                        end: Math.trunc(end)
+                        end: Math.trunc(end),
                     });
                 }
             });
