@@ -240,26 +240,33 @@ class MyGame extends Phaser.Scene {
                     `Delta: ${this.averageDelta.toFixed(3)}ms`
                 );
             }
-            
+
             // Draw the visible beats
-            let lower = Math.trunc(Math.max((timeSinceStart - 1000)/MS_PER_ELEMENT, 0));
-            let upper = Math.trunc(Math.min(this.beatsArray.length, (timeSinceStart + 1000 + MS_PER_ELEMENT)/MS_PER_ELEMENT));
+            let lower = Math.trunc(
+                Math.max((timeSinceStart - 1000) / MS_PER_ELEMENT, 0)
+            );
+            let upper = Math.trunc(
+                Math.min(
+                    this.beatsArray.length,
+                    (timeSinceStart + 1000 + MS_PER_ELEMENT) / MS_PER_ELEMENT
+                )
+            );
             for (let i = lower; i < upper; i++) {
                 let beat = this.beatsArray[i];
                 if (!beat || beat === []) {
                     continue;
                 }
-                beat.forEach(({ms, column}) => {
+                beat.forEach(({ ms, column }) => {
                     let beatSprite = this.add
-                    .image(
-                        64 + column * 128,
-                        1000 - (ms - timeSinceStart),
-                        'beat-red'
-                    )
-                    .setDepth(1);
+                        .image(
+                            64 + column * 128,
+                            1000 - (ms - timeSinceStart),
+                            'beat-red'
+                        )
+                        .setDepth(1);
                     this.beatSprites.push(beatSprite);
                 });
-            };
+            }
 
             // Check the next beats for misses
             for (let column = 0; column < COLUMNS; column++) {
@@ -288,18 +295,37 @@ class MyGame extends Phaser.Scene {
             if (isPressed && this.isUp(column)) {
                 this.beatLineIsPressed[column] = false;
 
-                if (this.mode === 'recording' && timeSinceStart - this.beatLineHoldTimeStarted[column] >= MINIMUM_HOLD_TIME) {
-                    this.recordedBeats.pop();
-                    this.recordedBeats[column].push({
-                        type: 'hold',
-                        ms: this.beatLineHoldTimeStarted,
-                        end: timeSinceStart
-                    });
-                } else if (this.mode === 'playing' && timeSinceStart - this.beatLineHoldTimeStarted[column] >= MINIMUM_HOLD_TIME) {
-                    // TODO Handle checking let go time
-                }
+                // if (
+                //     this.mode === 'recording' &&
+                //     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
+                //         MINIMUM_HOLD_TIME
+                // ) {
+                //     this.recordedBeats.pop();
+                //     this.recordedBeats[column].push({
+                //         type: 'hold',
+                //         ms: this.beatLineHoldTimeStarted,
+                //         end: timeSinceStart,
+                //     });
+                // } else if (
+                //     this.mode === 'playing' &&
+                //     timeSinceStart - this.beatLineHoldTimeStarted[column] >=
+                //         MINIMUM_HOLD_TIME &&
+                //     this.beats[column][this.nextBeatsIndex[column]].end
+                // ) {
+                //     // If there are no more beats we can skip this column
+                //     if (
+                //         this.nextBeatsIndex[column] >= this.beats[column].length
+                //     ) {
+                //         return;
+                //     } 
 
-                this.beatLineHoldTimeStarted[column] = -1;
+                //     let {ms} = this.beats[column][this.nextBeatsIndex[column]];
+                //     this.gradeHit(ms, timeSinceStart, column);
+                //     this.nextBeatHit[column] = false;
+                //     this.nextBeatsIndex[column]++;
+                // }
+
+                // this.beatLineHoldTimeStarted[column] = -1;
             }
         });
 
@@ -318,87 +344,14 @@ class MyGame extends Phaser.Scene {
                         this.nextBeatsIndex[column] >= this.beats[column].length
                     ) {
                         return;
-                    }
+                    } 
 
-                    let ms = this.beats[column][this.nextBeatsIndex[column]].ms;
-
-                    // If button is pressed and outside the poor timing window, then do nothing.
-                    if (timeSinceStart < ms - POOR_TIMING) {
-                        return;
-                    }
-
-                    this.nextBeatHit[column] = true;
-                    if (
-                        timeSinceStart >= ms - PERFECT_TIMING &&
-                        timeSinceStart <= ms + PERFECT_TIMING
-                    ) {
-                        this.hitCount++;
-                        this.hitCountText.setText(
-                            `Hits: ${this.hitCount}/${this.totalBeats}`
-                        );
-                        this.gradeText.setText('PERFECT');
-                        this.gradeTextTween.restart();
-                        this.gradeText.setFill('yellow');
-                        this.beatBackgrounds[column].targets[0].setVisible(
-                            true
-                        );
-                        this.beatBackgrounds[column].restart();
-                    } else if (
-                        timeSinceStart >= ms - GREAT_TIMING &&
-                        timeSinceStart <= ms + GREAT_TIMING
-                    ) {
-                        this.hitCount++;
-                        this.hitCountText.setText(
-                            `Hits: ${this.hitCount}/${this.totalBeats}`
-                        );
-                        this.gradeText.setText('GREAT');
-                        this.gradeTextTween.restart();
-                        this.gradeText.setFill('lime');
-                        this.beatBackgrounds[column].targets[0].setVisible(
-                            true
-                        );
-                        this.beatBackgrounds[column].restart();
-                    } else if (
-                        timeSinceStart >= ms - GOOD_TIMING &&
-                        timeSinceStart <= ms + GOOD_TIMING
-                    ) {
-                        this.hitCount++;
-                        this.hitCountText.setText(
-                            `Hits: ${this.hitCount}/${this.totalBeats}`
-                        );
-                        this.gradeText.setText('GOOD');
-                        this.gradeTextTween.restart();
-                        this.gradeText.setFill('lightblue');
-                        this.beatBackgrounds[column].targets[0].setVisible(
-                            true
-                        );
-                        this.beatBackgrounds[column].restart();
-                    } else if (
-                        timeSinceStart >= ms - BAD_TIMING &&
-                        timeSinceStart <= ms + BAD_TIMING
-                    ) {
-                        this.gradeText.setText('BAD');
-                        this.gradeTextTween.restart();
-                        this.gradeText.setFill('white');
-                    } else if (
-                        timeSinceStart >= ms - POOR_TIMING &&
-                        timeSinceStart <= ms + POOR_TIMING
-                    ) {
-                        this.gradeText.setText('POOR');
-                        this.gradeTextTween.restart();
-                        this.gradeText.setFill('gray');
-                    } else {
+                    let {ms, end} = this.beats[column][this.nextBeatsIndex[column]];
+                    this.gradeHit(ms, timeSinceStart, column);
+                    if (!end) {
                         this.nextBeatHit[column] = false;
+                        this.nextBeatsIndex[column]++;
                     }
-                    this.nextBeatHit[column] = false;
-                    this.nextBeatsIndex[column]++;
-                } else if (
-                    this.mode === 'playing' && 
-                    this.beatLineIsPressed &&
-                    timeSinceStart - this.beatLineHoldTimeStarted >= MINIMUM_HOLD_TIME) {
-                    // TODO Handle holds
-
-
                 } else if (
                     this.mode === 'recording' &&
                     !this.beatLineIsPressed[column]
@@ -476,19 +429,88 @@ class MyGame extends Phaser.Scene {
         }
     }
 
+    gradeHit(ms, timeSinceStart, column) {
+        if (
+            timeSinceStart >= ms - PERFECT_TIMING &&
+            timeSinceStart <= ms + PERFECT_TIMING
+        ) {
+            this.hitCount++;
+            this.hitCountText.setText(
+                `Hits: ${this.hitCount}/${this.totalBeats}`
+            );
+            this.gradeText.setText('PERFECT');
+            this.gradeTextTween.restart();
+            this.gradeText.setFill('yellow');
+            this.beatBackgrounds[column].targets[0].setVisible(
+                true
+            );
+            this.beatBackgrounds[column].restart();
+        } else if (
+            timeSinceStart >= ms - GREAT_TIMING &&
+            timeSinceStart <= ms + GREAT_TIMING
+        ) {
+            this.hitCount++;
+            this.hitCountText.setText(
+                `Hits: ${this.hitCount}/${this.totalBeats}`
+            );
+            this.gradeText.setText('GREAT');
+            this.gradeTextTween.restart();
+            this.gradeText.setFill('lime');
+            this.beatBackgrounds[column].targets[0].setVisible(
+                true
+            );
+            this.beatBackgrounds[column].restart();
+        } else if (
+            timeSinceStart >= ms - GOOD_TIMING &&
+            timeSinceStart <= ms + GOOD_TIMING
+        ) {
+            this.hitCount++;
+            this.hitCountText.setText(
+                `Hits: ${this.hitCount}/${this.totalBeats}`
+            );
+            this.gradeText.setText('GOOD');
+            this.gradeTextTween.restart();
+            this.gradeText.setFill('lightblue');
+            this.beatBackgrounds[column].targets[0].setVisible(
+                true
+            );
+            this.beatBackgrounds[column].restart();
+        } else if (
+            timeSinceStart >= ms - BAD_TIMING &&
+            timeSinceStart <= ms + BAD_TIMING
+        ) {
+            this.gradeText.setText('BAD');
+            this.gradeTextTween.restart();
+            this.gradeText.setFill('white');
+        } else if (
+            timeSinceStart >= ms - POOR_TIMING &&
+            timeSinceStart <= ms + POOR_TIMING
+        ) {
+            this.gradeText.setText('POOR');
+            this.gradeTextTween.restart();
+            this.gradeText.setFill('gray');
+        } else {
+            this.nextBeatHit[column] = false;
+        }
+    }
+
     // Process file into an array of milliseconds
     createBeatArray(beats) {
         beats.forEach((column, columnIndex) => {
-            column.forEach(beat => {
-                let index = Math.trunc(beat.ms/MS_PER_ELEMENT);
+            column.forEach((beat) => {
+                let index = Math.trunc(beat.ms / MS_PER_ELEMENT);
                 if (!this.beatsArray[index]) {
                     this.beatsArray[index] = [];
                 }
-                console.log("PUSHING " + beat.ms + "ms: " + columnIndex);
-                this.beatsArray[index].push({...beat, column: columnIndex, ms: Math.trunc(beat.ms)});
+                console.log('PUSHING ' + beat.ms + 'ms: ' + columnIndex);
+                this.beatsArray[index].push({
+                    ...beat,
+                    column: columnIndex,
+                    ms: Math.trunc(beat.ms),
+                });
             });
         });
-        console.log("BEATS ARRAY: " + JSON.stringify(this.beatsArray, null, 5));
+        console.log('BEATS ARRAY: ' + JSON.stringify(this.beatsArray, null, 5));
     }
 
     isDown(column) {
@@ -513,7 +535,7 @@ class MyGame extends Phaser.Scene {
     }
 }
 
-const screenWidth = window.view
+const screenWidth = window.view;
 
 const config = {
     type: Phaser.AUTO,
@@ -525,7 +547,7 @@ const config = {
         parent: 'phaser-example',
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 1920,
-        height: 1080
+        height: 1080,
     },
     scene: MyGame,
 };
