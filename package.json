@@ -33,6 +33,7 @@
         "webpack-merge": "^4.2.2"
     },
     "dependencies": {
+        "husky": "^8.0.3",
         "phaser": "^3.50.0",
         "prettier": "^3.0.1"
     }

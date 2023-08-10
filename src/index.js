@@ -256,14 +256,20 @@ class MyGame extends Phaser.Scene {
                 if (!beat || beat === []) {
                     continue;
                 }
-                beat.forEach(({ ms, column }) => {
-                    let beatSprite = this.add
+                beat.forEach(({ ms, end, column }) => {
+                    let beatSprite;
+                    if (!end) {
+
+                        beatSprite = this.add
                         .image(
                             64 + column * 128,
                             1000 - (ms - timeSinceStart),
                             'beat-red'
                         )
                         .setDepth(1);
+                    } else {
+                        beatSprite = this.add.rectangle(64 + column * 128, 1000 - (end - timeSinceStart), 128, end - ms).setDepth(2);
+                    }
                     this.beatSprites.push(beatSprite);
                 });
             }
