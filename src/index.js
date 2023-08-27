@@ -121,7 +121,7 @@ class MyGame extends Phaser.Scene {
             } else if (event.key === 'e') {
                 this.mode = 'editting';
                 this.timeStarted = 0;
-                this.modeText.setText('Mode: Editting');
+                this.modeText.setText('mode: editting');
                 this.song.stop();
                 this.beats = this.recordedBeats;
 
@@ -142,7 +142,7 @@ class MyGame extends Phaser.Scene {
                 this.totalBeats = this.beats.reduce((acc, curr) => {
                     return acc + curr.length;
                 }, 0);
-                this.timeStarted = time;
+                this.timeOffset = 0;
                 this.song.play();
             } else if (event.key === 't') {
                 this.mode = 'playing';
@@ -154,7 +154,7 @@ class MyGame extends Phaser.Scene {
                 this.totalBeats = this.beats.reduce((acc, curr) => {
                     return acc + curr.length;
                 }, 0);
-                this.timeStarted = time;
+                this.timeOffset = 0;
                 this.song.play();
             } else if (event.key === 'r') {
                 this.mode = 'recording';
@@ -163,7 +163,7 @@ class MyGame extends Phaser.Scene {
                 for (let column = 0; column < COLUMNS; column++) {
                     this.recordedBeats[column] = new Array();
                 }
-                this.timeStarted = time;
+                this.timeOffset = 0;
                 this.song.play();
             } else if (event.key === 'Enter') {
                 if (this.mode !== 'recording') {
@@ -173,24 +173,23 @@ class MyGame extends Phaser.Scene {
                 this.modeText.setText(`mode: ${this.mode}`);
                 this.song.stop();
                 console.log(
-                    'export default ' + JSON.stringify(this.recordedBeats, null, 5)
+                    'export default ' +
+                        JSON.stringify(this.recordedBeats, null, 5)
                 );
                 localStorage.setItem(
                     'recordedChart',
                     JSON.stringify(this.recordedBeats)
                 );
-            } else if (event.key === 'Esc') {
+            } else if (event.key === 'o') {
                 this.mode = 'paused';
                 this.song.stop();
             } else if (event.key === 'ArrowUp') {
                 this.bpm += 1;
                 this.deltaText.setText('BPM: ' + this.bpm);
-
                 this.createLineTimings(this.bpm);
             } else if (event.key === 'ArrowDown') {
                 this.bpm -= 1;
                 this.deltaText.setText('BPM: ' + this.bpm);
-
                 this.createLineTimings(this.bpm);
             } else if (event.key === 'ArrowLeft') {
                 this.speed -= 0.1;
@@ -316,18 +315,22 @@ class MyGame extends Phaser.Scene {
     }
 
     update(time, delta) {
+        const MS_PER_PIXEL = this.speed;
+
         if (!this.averageDelta) {
             this.averageDelta = delta;
         } else {
             this.averageDelta = (this.averageDelta + delta) / 2;
         }
 
-        const MS_PER_PIXEL = this.speed;
+        if (this.mode === 'playing') {
+            this.timeOffset += delta;
+        }
 
         // Calculate the time since the song started
         let lastTimeSeconds = Math.trunc(this.lastTime / 1000);
 
-        let timeSinceStart = Math.trunc(time - this.timeStarted);
+        let timeSinceStart = this.timeOffset;
         let currentTimeSeconds = Math.trunc(timeSinceStart / 1000);
         let updateAvg = lastTimeSeconds !== currentTimeSeconds;
         this.lastTime = timeSinceStart;
@@ -336,7 +339,6 @@ class MyGame extends Phaser.Scene {
         this.beatLines.forEach((beatLine) => beatLine.setVisible(false));
 
         if (this.mode === 'editting') {
-            timeSinceStart = this.timeOffset;
             let currentTimeSeconds = timeSinceStart / 1000;
 
             // Clear beat sprites
