@@ -32,10 +32,6 @@ class MyGame extends Phaser.Scene {
         this.hitCount = 0;
         this.totalBeats = 0;
 
-        this.recordIsDown = false;
-        this.playIsDown = false;
-        this.testIsDown = false;
-        this.editIsDown = false;
         this.bpm = 120;
         this.speed = 1;
 
@@ -44,6 +40,7 @@ class MyGame extends Phaser.Scene {
         this.timeText = null;
         this.deltaText = null;
         this.speedText = null;
+        this.bpmText = null;
         this.gradeText = null;
         this.gradeTextTween = null;
 
@@ -131,7 +128,6 @@ class MyGame extends Phaser.Scene {
                 this.totalBeats = this.beats.reduce((acc, curr) => {
                     return acc + curr.length;
                 }, 0);
-                this.deltaText.setText('BPM: ' + this.bpm);
             } else if (event.key === 'p') {
                 this.mode = 'playing';
                 this.modeText.setText(`mode: ${this.mode}`);
@@ -185,11 +181,11 @@ class MyGame extends Phaser.Scene {
                 this.song.stop();
             } else if (event.key === 'ArrowUp') {
                 this.bpm += 1;
-                this.deltaText.setText('BPM: ' + this.bpm);
+                this.bpmText.setText('BPM: ' + this.bpm);
                 this.createLineTimings(this.bpm);
             } else if (event.key === 'ArrowDown') {
                 this.bpm -= 1;
-                this.deltaText.setText('BPM: ' + this.bpm);
+                this.bpmText.setText('BPM: ' + this.bpm);
                 this.createLineTimings(this.bpm);
             } else if (event.key === 'ArrowLeft') {
                 this.speed -= 0.1;
@@ -226,9 +222,17 @@ class MyGame extends Phaser.Scene {
         this.deltaText = this.add.text(TEXT_Y_OFFSET, 60, `Delta: `, {
             color: 'white',
         });
-        this.speedText = this.add.text(
+        this.bpmText = this.add.text(
             TEXT_Y_OFFSET,
             80,
+            `BPM: ${this.bpm}`,            
+            {
+                color: 'white',
+            }
+        );
+        this.speedText = this.add.text(
+            TEXT_Y_OFFSET,
+            100,
             `Speed: ${this.speed}X`,
             {
                 color: 'white',
