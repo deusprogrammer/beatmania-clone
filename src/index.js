@@ -222,14 +222,9 @@ class MyGame extends Phaser.Scene {
         this.deltaText = this.add.text(TEXT_Y_OFFSET, 60, `Delta: `, {
             color: 'white',
         });
-        this.bpmText = this.add.text(
-            TEXT_Y_OFFSET,
-            80,
-            `BPM: ${this.bpm}`,            
-            {
-                color: 'white',
-            }
-        );
+        this.bpmText = this.add.text(TEXT_Y_OFFSET, 80, `BPM: ${this.bpm}`, {
+            color: 'white',
+        });
         this.speedText = this.add.text(
             TEXT_Y_OFFSET,
             100,
@@ -318,9 +313,107 @@ class MyGame extends Phaser.Scene {
         this.song = this.sound.add('smooooooch');
     }
 
-    update(time, delta) {
-        const MS_PER_PIXEL = this.speed;
+    renderBeats(showLines) {
+        let currentTimeSeconds = this.timeOffset / 1000;
 
+        // Clear beat sprites
+        let beatSprite;
+        while ((beatSprite = this.beatSprites.shift())) {
+            beatSprite.destroy();
+        }
+
+        // Clear line sprites
+        let lineSprite;
+        while ((lineSprite = this.lineSprites.shift())) {
+            lineSprite.destroy();
+        }
+
+        this.timeText.setText(`Time:  ${currentTimeSeconds}s`);
+
+        // Draw the visible beats
+        let lower = Math.trunc(
+            Math.max(
+                (this.timeOffset - 1000 / this.speed) / MS_PER_ELEMENT,
+                0
+            )
+        );
+        let upper = Math.trunc(
+            Math.min(
+                this.beatsArray.length,
+                (this.timeOffset + 1000 / this.speed + MS_PER_ELEMENT) /
+                    MS_PER_ELEMENT
+            )
+        );
+        
+        for (let i = lower; i < upper; i++) {
+            if (showLines) {
+                let lineTimingWindow = this.linesArray[i];
+                lineTimingWindow.forEach(({ ms, color }) => {
+                    let lineSprite = this.add
+                        .line(
+                            0,
+                            0,
+                            0,
+                            Y_ZERO - (ms - this.timeOffset) * this.speed,
+                            1280,
+                            Y_ZERO - (ms - this.timeOffset) * this.speed,
+                            color,
+                            0.5
+                        )
+                        .setDepth(1000);
+
+                    this.lineSprites.push(lineSprite);
+                });
+            }
+
+            let beat = this.beatsArray[i];
+            if (!beat || beat === []) {
+                continue;
+            }
+            beat.forEach(({ ms, end, column }) => {
+                let beatSprite;
+                if (!end) {
+                    beatSprite = this.add
+                        .image(
+                            64 + column * 128,
+                            Y_ZERO - (ms - this.timeOffset) * this.speed,
+                            'beat-red'
+                        )
+                        .setScale(1, this.speed)
+                        .setDepth(3);
+                } else {
+                    let startY =
+                        Y_ZERO - (ms - this.timeOffset) * this.speed;
+                    let endY =
+                        Y_ZERO - (end - this.timeOffset) * this.speed;
+                    let duration = startY - endY;
+                    beatSprite = this.add
+                        .image(64 + column * 128, startY, 'beat-blue')
+                        .setScale(1, this.speed)
+                        .setDepth(3);
+                    this.beatSprites.push(beatSprite);
+                    beatSprite = this.add
+                        .image(64 + column * 128, endY, 'beat-blue')
+                        .setScale(1, this.speed)
+                        .setDepth(3);
+                    this.beatSprites.push(beatSprite);
+                    beatSprite = this.add
+                        .rectangle(
+                            64 + column * 128,
+                            endY,
+                            128,
+                            duration,
+                            0x0000ff
+                        )
+                        .setOrigin(0.5, 0)
+                        .setDepth(2);
+                }
+                this.beatSprites.push(beatSprite);
+            });
+        }
+    }
+
+    update(time, delta) {
         if (!this.averageDelta) {
             this.averageDelta = delta;
         } else {
@@ -343,107 +436,8 @@ class MyGame extends Phaser.Scene {
         this.beatLines.forEach((beatLine) => beatLine.setVisible(false));
 
         if (this.mode === 'editting') {
-            let currentTimeSeconds = timeSinceStart / 1000;
-
-            // Clear beat sprites
-            let beatSprite;
-            while ((beatSprite = this.beatSprites.shift())) {
-                beatSprite.destroy();
-            }
-
-            // Clear line sprites
-            let lineSprite;
-            while ((lineSprite = this.lineSprites.shift())) {
-                lineSprite.destroy();
-            }
-
-            this.timeText.setText(`Time:  ${currentTimeSeconds}s`);
-
-            // Draw the visible beats
-            let lower = Math.trunc(
-                Math.max(
-                    (timeSinceStart - 1000 / MS_PER_PIXEL) / MS_PER_ELEMENT,
-                    0
-                )
-            );
-            let upper = Math.trunc(
-                Math.min(
-                    this.beatsArray.length,
-                    (timeSinceStart + 1000 / MS_PER_PIXEL + MS_PER_ELEMENT) /
-                        MS_PER_ELEMENT
-                )
-            );
-            for (let i = lower; i < upper; i++) {
-                let lineTimingWindow = this.linesArray[i];
-                lineTimingWindow.forEach(({ ms, color }) => {
-                    let lineSprite = this.add
-                        .line(
-                            0,
-                            0,
-                            0,
-                            Y_ZERO - (ms - timeSinceStart) * MS_PER_PIXEL,
-                            1280,
-                            Y_ZERO - (ms - timeSinceStart) * MS_PER_PIXEL,
-                            color,
-                            0.5
-                        )
-                        .setDepth(1000);
-
-                    this.lineSprites.push(lineSprite);
-                });
-
-                let beat = this.beatsArray[i];
-                if (!beat || beat === []) {
-                    continue;
-                }
-                beat.forEach(({ ms, end, column }) => {
-                    let beatSprite;
-                    if (!end) {
-                        beatSprite = this.add
-                            .image(
-                                64 + column * 128,
-                                Y_ZERO - (ms - timeSinceStart) * MS_PER_PIXEL,
-                                'beat-red'
-                            )
-                            .setScale(1, MS_PER_PIXEL)
-                            .setDepth(3);
-                    } else {
-                        let startY =
-                            Y_ZERO - (ms - timeSinceStart) * MS_PER_PIXEL;
-                        let endY =
-                            Y_ZERO - (end - timeSinceStart) * MS_PER_PIXEL;
-                        let duration = startY - endY;
-                        beatSprite = this.add
-                            .image(64 + column * 128, startY, 'beat-blue')
-                            .setScale(1, MS_PER_PIXEL)
-                            .setDepth(3);
-                        this.beatSprites.push(beatSprite);
-                        beatSprite = this.add
-                            .image(64 + column * 128, endY, 'beat-blue')
-                            .setScale(1, MS_PER_PIXEL)
-                            .setDepth(3);
-                        this.beatSprites.push(beatSprite);
-                        beatSprite = this.add
-                            .rectangle(
-                                64 + column * 128,
-                                endY,
-                                128,
-                                duration,
-                                0x0000ff
-                            )
-                            .setOrigin(0.5, 0)
-                            .setDepth(2);
-                    }
-                    this.beatSprites.push(beatSprite);
-                });
-            }
+            this.renderBeats(true);
         } else if (this.mode === 'playing') {
-            // Clear beat sprites
-            let beatSprite;
-            while ((beatSprite = this.beatSprites.shift())) {
-                beatSprite.destroy();
-            }
-
             this.timeText.setText(`Time:  ${currentTimeSeconds}s`);
             if (updateAvg) {
                 this.deltaText.setText(
@@ -451,66 +445,7 @@ class MyGame extends Phaser.Scene {
                 );
             }
 
-            // Draw the visible beats
-            let lower = Math.trunc(
-                Math.max(
-                    (timeSinceStart - 1000 / MS_PER_PIXEL) / MS_PER_ELEMENT,
-                    0
-                )
-            );
-            let upper = Math.trunc(
-                Math.min(
-                    this.beatsArray.length,
-                    (timeSinceStart + 1000 / MS_PER_PIXEL + MS_PER_ELEMENT) /
-                        MS_PER_ELEMENT
-                )
-            );
-            for (let i = lower; i < upper; i++) {
-                let beat = this.beatsArray[i];
-                if (!beat || beat === []) {
-                    continue;
-                }
-                beat.forEach(({ ms, end, column }) => {
-                    let beatSprite;
-                    if (!end) {
-                        beatSprite = this.add
-                            .image(
-                                64 + column * 128,
-                                Y_ZERO - (ms - timeSinceStart) * MS_PER_PIXEL,
-                                'beat-red'
-                            )
-                            .setScale(1, MS_PER_PIXEL)
-                            .setDepth(3);
-                    } else {
-                        let startY =
-                            Y_ZERO - (ms - timeSinceStart) * MS_PER_PIXEL;
-                        let endY =
-                            Y_ZERO - (end - timeSinceStart) * MS_PER_PIXEL;
-                        let duration = startY - endY;
-                        beatSprite = this.add
-                            .image(64 + column * 128, startY, 'beat-blue')
-                            .setScale(1, MS_PER_PIXEL)
-                            .setDepth(3);
-                        this.beatSprites.push(beatSprite);
-                        beatSprite = this.add
-                            .image(64 + column * 128, endY, 'beat-blue')
-                            .setScale(1, MS_PER_PIXEL)
-                            .setDepth(3);
-                        this.beatSprites.push(beatSprite);
-                        beatSprite = this.add
-                            .rectangle(
-                                64 + column * 128,
-                                endY,
-                                128,
-                                duration,
-                                0x0000ff
-                            )
-                            .setOrigin(0.5, 0)
-                            .setDepth(2);
-                    }
-                    this.beatSprites.push(beatSprite);
-                });
-            }
+            this.renderBeats(false);
 
             // Check the next beats for misses
             for (let column = 0; column < COLUMNS; column++) {
