@@ -120,7 +120,8 @@ class MyGame extends Phaser.Scene {
             if (event.key === 'f') {
                 this.scale.startFullscreen();
             } else if (event.key === 'y') {
-                this.showLines = true;
+                this.showLines = !this.showLines;
+                this.createLineTimings(this.bpm);
             } else if (event.key === 'e') {
                 if (this.mode !== 'playing') {
                     this.timeOffset = 0;
@@ -131,7 +132,10 @@ class MyGame extends Phaser.Scene {
                 this.song1.pause();
                 this.song2.pause();
                 this.song2.removeMarker('resume');
-                this.song2.addMarker({name: 'resume', start: this.timeOffset/1000});
+                this.song2.addMarker({
+                    name: 'resume',
+                    start: this.timeOffset / 1000,
+                });
                 this.beats = this.recordedBeats;
 
                 this.createLineTimings(this.bpm);
@@ -229,7 +233,10 @@ class MyGame extends Phaser.Scene {
                 }
 
                 this.song2.removeMarker('resume');
-                this.song2.addMarker({name: 'resume', start: this.timeOffset / 1000});
+                this.song2.addMarker({
+                    name: 'resume',
+                    start: this.timeOffset / 1000,
+                });
             }
         );
 
@@ -573,9 +580,7 @@ class MyGame extends Phaser.Scene {
                     });
                 }
                 this.beatLineIsPressed[column] = true;
-                if (
-                    this.beatLineHoldTimeStarted[column] === -1
-                ) {
+                if (this.beatLineHoldTimeStarted[column] === -1) {
                     this.beatLineHoldTimeStarted[column] = this.timeOffset;
                 }
             }
