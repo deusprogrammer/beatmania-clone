@@ -122,29 +122,31 @@ class MyGame extends Phaser.Scene {
             } else if (event.key === 'y') {
                 this.showLines = !this.showLines;
                 this.createLineTimings(this.bpm);
-            } else if (event.key === 'e') {
-                if (this.mode !== 'playing') {
-                    this.timeOffset = 0;
-                }
-                this.mode = 'editting';
-                this.modeText.setText('mode: editting');
-                this.showLines = true;
-                this.song1.pause();
-                this.song2.pause();
-                this.song2.removeMarker('resume');
-                this.song2.addMarker({
-                    name: 'resume',
-                    start: this.timeOffset / 1000,
-                });
-                this.beats = this.recordedBeats;
+            } 
+            // else if (event.key === 'e') {
+            //     if (this.mode !== 'playing') {
+            //         this.timeOffset = 0;
+            //     }
+            //     this.mode = 'editting';
+            //     this.modeText.setText('mode: editting');
+            //     this.showLines = true;
+            //     this.song1.pause();
+            //     this.song2.pause();
+            //     this.song2.removeMarker('resume');
+            //     this.song2.addMarker({
+            //         name: 'resume',
+            //         start: this.timeOffset / 1000,
+            //     });
+            //     this.beats = this.recordedBeats;
 
-                this.createLineTimings(this.bpm);
-                this.createBeatArray(this.beats);
+            //     this.createLineTimings(this.bpm);
+            //     this.createBeatArray(this.beats);
 
-                this.totalBeats = this.beats.reduce((acc, curr) => {
-                    return acc + curr.length;
-                }, 0);
-            } else if (event.key === 'p') {
+            //     this.totalBeats = this.beats.reduce((acc, curr) => {
+            //         return acc + curr.length;
+            //     }, 0);
+            // } 
+            else if (event.key === 'p') {
                 this.mode = 'playing';
                 this.modeText.setText(`mode: ${this.mode}`);
                 this.showLines = false;
@@ -178,7 +180,7 @@ class MyGame extends Phaser.Scene {
                 }
                 this.mode = 'playing';
                 this.modeText.setText(`mode: test`);
-                this.showLines = true;
+                this.showLines = false;
             } else if (event.key === 'r') {
                 this.mode = 'recording';
                 this.modeText.setText(`mode: ${this.mode}`);
