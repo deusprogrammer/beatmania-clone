@@ -122,7 +122,7 @@ class MyGame extends Phaser.Scene {
             } else if (event.key === 'y') {
                 this.showLines = !this.showLines;
                 this.createLineTimings(this.bpm);
-            } 
+            }
             // else if (event.key === 'e') {
             //     if (this.mode !== 'playing') {
             //         this.timeOffset = 0;
@@ -145,7 +145,7 @@ class MyGame extends Phaser.Scene {
             //     this.totalBeats = this.beats.reduce((acc, curr) => {
             //         return acc + curr.length;
             //     }, 0);
-            // } 
+            // }
             else if (event.key === 'p') {
                 this.mode = 'playing';
                 this.modeText.setText(`mode: ${this.mode}`);
